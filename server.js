@@ -31,27 +31,42 @@ fs.readFile(__dirname + "/" + process.argv.slice(2), async (err, data) => {
   const noNull = arr.filter(a => a !== 'NULL')
   const finalArr = noNull.filter(a => a !== '')
   console.log(finalArr)
+  
   let resArr = [];
+  let successCount = 0;
+  let count = 0;
 
   finalArr.map(fa => {
     axios.get(fa).then(res => {
-      resArr.push(res.status)
-      fs.writeFile("data.txt",resArr,(err)=>{
+      successCount++
+      resArr.push({status:res.status,count:successCount})
+      fs.writeFile("data_v2.txt",JSON.stringify(resArr),(err)=>{
         if(err)console.log(err)
         })
       }).catch(function(err){
-        const errURL = err.response.config.url;
+
+        let errURL = err;
+        if (err.hasOwnProperty('response')) {
+            errURL = errURL.config.url;
+        } else{
+            console.log(errURL)
+        }
+        
         console.log("error is:")
-        console.log(errURL)
+        // console.log(err.response.request.res.socket._httpMessage.connection._httpMessage)
+        // console.log(Object.keys(err.request))
           const lastError = errArr.filter(p =>{
             return p.impression_pixel_json == errURL;
           })
-          console.log(lastError)
+          
+          count++
           const impPixel = lastError[0]["impression_pixel_json"];
-          console.log(typeof impPixel)
           const tac_id =lastError[0]["tac"]
-          const myObj ={tac_id,impPixel}
-          fs.writeFile("err_v3.txt",JSON.stringify(myObj),(err)=>{
+          const lastErrorObj = {impPixel,tac_id,count}
+          const myArr = [];
+          myArr.push(lastErrorObj)
+          console.log(myArr)
+          fs.appendFile("err_v9.csv",JSON.stringify(myArr),(err)=>{
             if(err)console.log(err)
             })
       })
