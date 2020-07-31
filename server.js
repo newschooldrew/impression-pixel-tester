@@ -36,20 +36,23 @@ fs.readFile(__dirname + "/" + process.argv.slice(2), async (err, data) => {
   let successCount = 0;
   let count = 0;
 
-  finalArr.map(fa => {
-    axios.get(fa).then(res => {
+  finalArr.map(url => {
+    axios.get(url).then(res => {
+      console.log("url status:")
+      console.log(res.status)
+      if(res.status == 200){
+        console.log("200")
       successCount++
       resArr.push({status:res.status,count:successCount})
-      fs.writeFile("data_v2.txt",JSON.stringify(resArr),(err)=>{
+      fs.appendFile("data_v1.txt",JSON.stringify(resArr),(err)=>{
         if(err)console.log(err)
-        })
+          })
+        }
       }).catch(function(err){
 
-        let errURL = err;
+        let errURL;
         if (err.hasOwnProperty('response')) {
-            errURL = errURL.config.url;
-        } else{
-            console.log(errURL)
+            errURL = err.config.url;
         }
         
         console.log("error is:")
@@ -66,7 +69,7 @@ fs.readFile(__dirname + "/" + process.argv.slice(2), async (err, data) => {
           const myArr = [];
           myArr.push(lastErrorObj)
           console.log(myArr)
-          fs.appendFile("err_v9.csv",JSON.stringify(myArr),(err)=>{
+          fs.appendFile("err_v1.txt",JSON.stringify(myArr),(err)=>{
             if(err)console.log(err)
             })
       })
