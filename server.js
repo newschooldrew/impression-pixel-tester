@@ -78,7 +78,7 @@ mappedUrls.map(url => {
   // grabbing the beautified URL
   const axiosURL = url.impression_pixel_json;
     // simulating a request using axios
-    axios.get(axiosURL).then(res => {
+    axios.get(axiosURL).then(async res => {
       console.log("url status:")
       console.log(axiosURL)
       console.log(res.status)
@@ -88,10 +88,19 @@ mappedUrls.map(url => {
       // in the data file
       if(res.status >= 200 && res.status <= 399){
       successCount++
-      resArr.push({status:res.status,count:successCount})
-      fs.writeFile("data_" + dataArg + ".txt",JSON.stringify(resArr),(err)=>{
-        if(err)console.log(err)
-          })
+      resArr.push({status:res.status})
+      // fs.writeFile("data_" + dataArg + ".txt",JSON.stringify(resArr),(err)=>{
+      //   if(err)console.log(err)
+      //     })
+      let success_workbook = new Excel.Workbook();
+      let success_worksheet = success_workbook.addWorksheet('success');
+      success_worksheet.columns = [
+        { header: 'status code', key: 'status', width: 10 }
+      ];      
+
+      success_worksheet.insertRows(2,resArr)
+
+      await success_workbook.csv.writeFile("success_" + dataArg +".csv");
         }
       }).catch(async function(err){
         
@@ -128,21 +137,21 @@ mappedUrls.map(url => {
         console.log(myArr)
         // const stream = fs.createWriteStream("error_" + errArg + ".html");
 
-      let workbook = new Excel.Workbook();
-      let worksheet = workbook.addWorksheet('lebron');
-      worksheet.columns = [
+      let error_workbook = new Excel.Workbook();
+      let error_worksheet = error_workbook.addWorksheet('lebron');
+      error_worksheet.columns = [
         { header: 'Tactic ID', key: 'tactic_id', width: 10 },
         { header: 'Impression Pixel', key: 'impression_pixel_json', width: 32 }
       ];      
 
-        worksheet.insertRows(2,myArr)
+      error_worksheet.insertRows(2,myArr)
 
-      await workbook.csv.writeFile("lebron_17.csv");
+      await error_workbook.csv.writeFile("error_" + errArg +".csv");
 
           // writing that data to the error log
-        fs.appendFile("error_" + errArg + ".txt",JSON.stringify(myArr),(err)=>{
-            if(err)console.log(err)
-          })
+        // fs.appendFile("error_" + errArg + ".txt",JSON.stringify(myArr),(err)=>{
+        //     if(err)console.log(err)
+        //   })
       })
     })
 })
