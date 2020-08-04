@@ -28,16 +28,16 @@ let errArr = [];
 // These variables will help build out file names
 
 const errArg = args.error;
-const dataArg = args.data;
+const successArg = args.success;
 const csvArg = args.csv;
 
-if(errArg == ''|| dataArg == ''){
+if(errArg == ''|| successArg == '' || !successArg || ! errArg){
   // verifies that the arguments are being passed in
   // otherwise we could end up with files named 'undefined'
   console.log("")
-    console.log("Please enter a valid argument for the data and error parameters")
+    console.log("Please enter a valid argument for the success and error parameters")
     console.log("")
-    console.log("Example:  node server.js --error=v1 --data=v1 --csv=URLs.csv")
+    console.log("Example:  node server.js --error=v1 --success=v1 --csv=URLs.csv")
     console.log("")
     return false
 }
@@ -118,7 +118,7 @@ mappedUrls.map(url => {
 
       // axios gives us a response with a status code
       // if its anything between 200 or 399, we are logging it
-      // in the data file
+      // in the success file
       if(res.status >= 200 && res.status <= 399){
       successArr.push({status:res.status,url:axiosURL})
 
@@ -136,7 +136,7 @@ mappedUrls.map(url => {
       
       // promise based function that creates the CSV file
       // using the variable input in the command line
-      await success_workbook.csv.writeFile("success_" + dataArg +".csv");
+      await success_workbook.csv.writeFile("success_" + successArg +".csv");
         }
         // if the URL does not return a successful response
         // we get an error
