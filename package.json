@@ -2,7 +2,10 @@
   "name": "triplelift",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "MIT",  
+  "scripts":{
+    "test": "nodemon --exec 'mocha -R min'"
+  },
   "dependencies": {
     "axios": "^0.19.2",
     "csv-parse": "^4.11.1",
@@ -11,7 +14,9 @@
     "express": "^4.17.1",
     "fs": "^0.0.1-security",
     "minimist": "^1.2.5",
+    "mocha": "^8.1.0",
     "neat-csv": "^5.2.0",
+    "nodemon": "^2.0.4",
     "unescape": "^1.0.1",
     "unescape-js": "^1.1.4",
     "yargs": "^15.4.1"

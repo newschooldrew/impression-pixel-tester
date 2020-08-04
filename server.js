@@ -1,28 +1,43 @@
+// basic server set up
 const express = require('express')
 const app = express()
-const csv = require('csv-parser')
+
+// using this module to read the incoming CSV
 const fs = require('fs')
+
+// using this module to parse out the CSV file
+// we'll then perform actions on this parsed data
 const neatCsv = require('neat-csv');
+
+// using this to request the URLs in the URL sheet
 const axios = require('axios')
+
+// module that allows me to easily assign
+// variables to node js arguments
+
 const args = require('yargs').argv;
+// module let me create excel sheets
 const Excel = require('exceljs');
 
-let arr = [];
 let mappedUrls = [];
 let finalURL;
-let lastErrorObj = [];
-let myArr = [];
+let errorObj = [];
+let errArr = [];
+
 // Using yargs to create variables from command line
 // These variables will help build out file names
 const errArg = args.error;
-const dataArg = args.error;args.data;
+const dataArg = args.data;
 const csvArg = args.csv;
 
 
 // Read incoming CSV file from the command line
+// by using FS module
 fs.readFile(__dirname + "/" + csvArg, async (err, data) => {
+
   // using neat-csv to parse out csv file
   const res = await neatCsv(data)
+
   // mapping out the parsed out response from neat-csv
   res.map(r =>{
     // the response is in object form
@@ -65,7 +80,7 @@ fs.readFile(__dirname + "/" + csvArg, async (err, data) => {
     mappedUrls = mappedUrls.filter(p => p.impression_pixel_json !== 'NULL')
   })
 
-  let resArr = [];
+  let successArr = [];
 
   // set up variables to count the number of times the URLs came back with 
   // a sucessful or error status code
@@ -88,20 +103,27 @@ mappedUrls.map(url => {
       // in the data file
       if(res.status >= 200 && res.status <= 399){
       successCount++
-      resArr.push({status:res.status})
-      // fs.writeFile("data_" + dataArg + ".txt",JSON.stringify(resArr),(err)=>{
-      //   if(err)console.log(err)
-      //     })
+      successArr.push({status:res.status,url:axiosURL})
+
+      // creating the workbook that will house the successful URLs
       let success_workbook = new Excel.Workbook();
       let success_worksheet = success_workbook.addWorksheet('success');
+      // creating the headers that will live in the successful excel doc
       success_worksheet.columns = [
-        { header: 'status code', key: 'status', width: 10 }
+        { header: 'Status Code', key: 'status', width: 10 },
+        { header: 'Successful URL', key: 'url', width: 100 },
       ];      
-
-      success_worksheet.insertRows(2,resArr)
-
+      // grabbing the object that houses the correct status and URL
+      // and throwing them into rows, under their respective columns
+      success_worksheet.insertRows(2,successArr)
+      
+      // promise based function that creates the CSV file
+      // using the variable input in the command line
       await success_workbook.csv.writeFile("success_" + dataArg +".csv");
         }
+        // if the URL does not return a successful response
+        // we get an error
+        // and we catch it here
       }).catch(async function(err){
         
         let errURL;
@@ -114,29 +136,28 @@ mappedUrls.map(url => {
         
         // we then match that URL with all of the objects
         // and filter out any of the objects that dont match the URL
-        const lastError = mappedUrls.filter(p =>{ 
+        const matchedError = mappedUrls.filter(p =>{ 
           return p.impression_pixel_json == errURL;
         })
-        console.log("errURL:")
-        console.log(errURL)
-        console.log("error is:")
-        console.log(lastError)
+
+        console.log("matchedError is:")
+        console.log(matchedError)
           
         // we want to keep track of how many URLs do not have a successful status code
         // so we increment the value of count each time we run this function
         count++
 
         // creating a new object from the matched object
-        const impression_pixel_json = lastError[0]["impression_pixel_json"];
-        const tactic_id =lastError[0]["tactic_id"]
-        lastErrorObj = [tactic_id,impression_pixel_json]
+        const impression_pixel_json = matchedError[0]["impression_pixel_json"];
+        const tactic_id =matchedError[0]["tactic_id"]
+        errorObj = [tactic_id,impression_pixel_json]
 
         // pushing that object in an empty array
-        myArr.push(lastErrorObj)
-        console.log("myArr:")
-        console.log(myArr)
-        // const stream = fs.createWriteStream("error_" + errArg + ".html");
+        errArr.push(errorObj)
+        console.log("errArr:")
+        console.log(errArr)
 
+        // re-creating the excel work flow but for URLs that error out
       let error_workbook = new Excel.Workbook();
       let error_worksheet = error_workbook.addWorksheet('lebron');
       error_worksheet.columns = [
@@ -144,14 +165,10 @@ mappedUrls.map(url => {
         { header: 'Impression Pixel', key: 'impression_pixel_json', width: 32 }
       ];      
 
-      error_worksheet.insertRows(2,myArr)
+      error_worksheet.insertRows(2,errArr)
 
       await error_workbook.csv.writeFile("error_" + errArg +".csv");
 
-          // writing that data to the error log
-        // fs.appendFile("error_" + errArg + ".txt",JSON.stringify(myArr),(err)=>{
-        //     if(err)console.log(err)
-        //   })
       })
     })
 })
