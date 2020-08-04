@@ -21,23 +21,41 @@ const Excel = require('exceljs');
 
 let mappedUrls = [];
 let finalURL;
-let errorObj = [];
+let matchedArr = [];
 let errArr = [];
 
 // Using yargs to create variables from command line
 // These variables will help build out file names
+
 const errArg = args.error;
 const dataArg = args.data;
 const csvArg = args.csv;
 
+if(errArg == ''|| dataArg == ''){
+  // verifies that the arguments are being passed in
+  // otherwise we could end up with files named 'undefined'
+  console.log("")
+    console.log("Please enter a valid argument for the data and error parameters")
+    console.log("")
+    console.log("Example:  node server.js --error=v1 --data=v1 --csv=URLs.csv")
+    console.log("")
+    return false
+}
 
 // Read incoming CSV file from the command line
 // by using FS module
 fs.readFile(__dirname + "/" + csvArg, async (err, data) => {
-
-  // using neat-csv to parse out csv file
-  const res = await neatCsv(data)
-
+  let res;
+  try {
+    // using neat-csv to parse out csv file
+    res = await neatCsv(data)
+  } catch(e){
+        // if the CSV file cannot be read
+        // we catch the error and return a error message to the user
+        console.log("")
+        console.log("Please enter a valid csv file!")
+        return false
+  }
   // mapping out the parsed out response from neat-csv
   res.map(r =>{
     // the response is in object form
@@ -68,7 +86,8 @@ fs.readFile(__dirname + "/" + csvArg, async (err, data) => {
       finalURL = noBackslashes;
     }
 
-    // grabbing the tactic_id associated with the impression pixel
+    // grabbing the tactic_id from the same object that we pulled the URL from
+    // which, of course, is the ID associated with that URL
     const tactic_id = r.tactic_id;
     
     // adding in the tactic ID and its associated impression pixel to the same object
@@ -84,25 +103,23 @@ fs.readFile(__dirname + "/" + csvArg, async (err, data) => {
 
   // set up variables to count the number of times the URLs came back with 
   // a sucessful or error status code
-  let successCount = 0;
   let count = 0;
 
   // mapping through the beautified object we created earlier
 mappedUrls.map(url => {
 
-  // grabbing the beautified URL
-  const axiosURL = url.impression_pixel_json;
-    // simulating a request using axios
-    axios.get(axiosURL).then(async res => {
-      console.log("url status:")
-      console.log(axiosURL)
-      console.log(res.status)
+    // grabbing the beautified URL
+      const axiosURL = url.impression_pixel_json;
+    // simulating a page request using axios
+      axios.get(axiosURL).then(async res => {
+        console.log("url status:")
+        console.log(axiosURL)
+        console.log(res.status)
 
       // axios gives us a response with a status code
       // if its anything between 200 or 399, we are logging it
       // in the data file
       if(res.status >= 200 && res.status <= 399){
-      successCount++
       successArr.push({status:res.status,url:axiosURL})
 
       // creating the workbook that will house the successful URLs
@@ -142,24 +159,20 @@ mappedUrls.map(url => {
 
         console.log("matchedError is:")
         console.log(matchedError)
-          
-        // we want to keep track of how many URLs do not have a successful status code
-        // so we increment the value of count each time we run this function
-        count++
 
-        // creating a new object from the matched object
+        // creating an array from the matched object
         const impression_pixel_json = matchedError[0]["impression_pixel_json"];
-        const tactic_id =matchedError[0]["tactic_id"]
-        errorObj = [tactic_id,impression_pixel_json]
+        const tactic_id = matchedError[0]["tactic_id"]
+        matchedArr = [tactic_id,impression_pixel_json]
 
         // pushing that object in an empty array
-        errArr.push(errorObj)
+        errArr.push(matchedArr)
         console.log("errArr:")
         console.log(errArr)
 
-        // re-creating the excel work flow but for URLs that error out
+        // re-creating the excel work flow but for URLs that error
       let error_workbook = new Excel.Workbook();
-      let error_worksheet = error_workbook.addWorksheet('lebron');
+      let error_worksheet = error_workbook.addWorksheet('error');
       error_worksheet.columns = [
         { header: 'Tactic ID', key: 'tactic_id', width: 10 },
         { header: 'Impression Pixel', key: 'impression_pixel_json', width: 32 }
